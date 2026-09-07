@@ -185,7 +185,7 @@ class HBNBCommand(cmd.Cmd):
         elif command == "show":
             self.do_show(f"{cls_name} {raw_args.strip('\"\'')}")
         elif command == "destroy":
-            self.do_destroy(f"{cls_name} {raw_args.strip('\"\'')}")
+            self.do_destroy("{} {}".format(cls_name, raw_args.strip("\"'")))
         elif command == "update":
             dict_match = re.match(
                 r"^[\"']([^\"']+)[\"'],\s*(\{.*\})$", raw_args
