@@ -1,28 +1,34 @@
 #!/usr/bin/python3
-"""Defines the HBNBCommand class."""
+"""Defines the HBNBCommand console class."""
 import cmd
-import re
 import shlex
 import models
 from models.base_model import BaseModel
+from models.user import User
+from models.place import Place
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.review import Review
 
 CLASSES = {
-    "BaseModel": BaseModel
+    "BaseModel": BaseModel,
+    "User": User,
+    "Place": Place,
+    "State": State,
+    "City": City,
+    "Amenity": Amenity,
+    "Review": Review
 }
 
 
-def parse_args(arg):
-    """Parse string arguments into a list of arguments using shlex."""
-    return shlex.split(arg)
-
-
 class HBNBCommand(cmd.Cmd):
-    """Command interpreter for the AirBnB clone project."""
+    """Command interpreter for AirBnB clone project."""
 
     prompt = "(hbnb) "
 
     def emptyline(self):
-        """Do nothing on empty line entry."""
+        """Do nothing on empty line input."""
         pass
 
     def do_quit(self, arg):
@@ -31,197 +37,198 @@ class HBNBCommand(cmd.Cmd):
 
     def do_EOF(self, arg):
         """EOF signal to exit the program."""
-        print("")
+        print()
         return True
 
     def do_create(self, arg):
-        """Usage: create <class_name>
-        Creates a new instance of BaseModel and saves it to JSON file.
-        """
-        args = parse_args(arg)
-        if len(args) == 0:
+        """Creates a new instance of BaseModel, saves it, and prints the id."""
+        args = shlex.split(arg)
+        if not args:
             print("** class name missing **")
-        elif args[0] not in CLASSES:
+            return
+        if args[0] not in CLASSES:
             print("** class doesn't exist **")
-        else:
-            new_instance = CLASSES[args[0]]()
-            new_instance.save()
-            print(new_instance.id)
+            return
+
+        instance = CLASSES[args[0]]()
+        instance.save()
+        print(instance.id)
 
     def do_show(self, arg):
-        """Usage: show <class_name> <id>
-        Prints representation of instance based on class and id.
-        """
-        args = parse_args(arg)
-        objects = models.storage.all()
-
-        if len(args) == 0:
+        """Prints the string representation of an instance."""
+        args = shlex.split(arg)
+        if not args:
             print("** class name missing **")
-        elif args[0] not in CLASSES:
+            return
+        if args[0] not in CLASSES:
             print("** class doesn't exist **")
-        elif len(args) == 1:
+            return
+        if len(args) < 2:
             print("** instance id missing **")
-        elif f"{args[0]}.{args[1]}" not in objects:
+            return
+
+        key = "{}.{}".format(args[0], args[1])
+        all_objs = models.storage.all()
+        if key not in all_objs:
             print("** no instance found **")
         else:
-            print(objects[f"{args[0]}.{args[1]}"])
+            print(all_objs[key])
 
     def do_destroy(self, arg):
-        """Usage: destroy <class_name> <id>
-        Deletes an instance based on class name and id.
-        """
-        args = parse_args(arg)
-        objects = models.storage.all()
-
-        if len(args) == 0:
+        """Deletes an instance based on the class name and id."""
+        args = shlex.split(arg)
+        if not args:
             print("** class name missing **")
-        elif args[0] not in CLASSES:
+            return
+        if args[0] not in CLASSES:
             print("** class doesn't exist **")
-        elif len(args) == 1:
+            return
+        if len(args) < 2:
             print("** instance id missing **")
-        elif f"{args[0]}.{args[1]}" not in objects:
+            return
+
+        key = "{}.{}".format(args[0], args[1])
+        all_objs = models.storage.all()
+        if key not in all_objs:
             print("** no instance found **")
         else:
-            del objects[f"{args[0]}.{args[1]}"]
+            del all_objs[key]
             models.storage.save()
 
     def do_all(self, arg):
-        """Usage: all or all <class_name>
-        Prints all string representation of instances.
-        """
-        args = parse_args(arg)
-        objects = models.storage.all()
+        """Prints all string representation of all instances."""
+        args = shlex.split(arg)
+        all_objs = models.storage.all()
         obj_list = []
 
-        if len(args) > 0 and args[0] not in CLASSES:
+        if not args:
+            for obj in all_objs.values():
+                obj_list.append(str(obj))
+            print(obj_list)
+            return
+
+        if args[0] not in CLASSES:
             print("** class doesn't exist **")
             return
 
-        for obj in objects.values():
-            if len(args) > 0 and args[0] == obj.__class__.__name__:
+        for key, obj in all_objs.items():
+            if key.startswith(args[0] + "."):
                 obj_list.append(str(obj))
-            elif len(args) == 0:
-                obj_list.append(str(obj))
-
         print(obj_list)
 
-    def do_count(self, arg):
-        """Usage: count <class_name> or <class_name>.count()
-        Retrieves the number of instances of a given class.
-        """
-        args = parse_args(arg)
-        if len(args) == 0:
-            print("** class name missing **")
-            return
-        if args[0] not in CLASSES:
-            print("** class doesn't exist **")
-            return
-
-        count = sum(
-            1 for obj in models.storage.all().values()
-            if obj.__class__.__name__ == args[0]
-        )
-        print(count)
-
     def do_update(self, arg):
-        """Usage: update <class> <id> <attribute_name> "<attribute_value>"
-        Updates an instance attribute based on class name and id.
-        """
-        args = parse_args(arg)
-        objects = models.storage.all()
-
-        if len(args) == 0:
+        """Updates an instance based on the class name and id."""
+        args = shlex.split(arg)
+        if not args:
             print("** class name missing **")
             return
         if args[0] not in CLASSES:
             print("** class doesn't exist **")
             return
-        if len(args) == 1:
+        if len(args) < 2:
             print("** instance id missing **")
             return
 
-        key = f"{args[0]}.{args[1]}"
-        if key not in objects:
+        key = "{}.{}".format(args[0], args[1])
+        all_objs = models.storage.all()
+
+        if key not in all_objs:
             print("** no instance found **")
             return
-        if len(args) == 2:
+        if len(args) < 3:
             print("** attribute name missing **")
             return
-        if len(args) == 3:
+        if len(args) < 4:
             print("** value missing **")
             return
 
-        obj = objects[key]
+        obj = all_objs[key]
         attr_name = args[2]
-        attr_value = args[3]
+        attr_val = args[3]
 
-        if attr_name in ("id", "created_at", "updated_at"):
-            return
-
-        if attr_value.isdigit():
-            attr_value = int(attr_value)
-        else:
+        if hasattr(obj, attr_name):
+            attr_type = type(getattr(obj, attr_name))
             try:
-                attr_value = float(attr_value)
-            except ValueError:
+                attr_val = attr_type(attr_val)
+            except (ValueError, TypeError):
                 pass
+        else:
+            if attr_val.isdigit():
+                attr_val = int(attr_val)
+            else:
+                try:
+                    attr_val = float(attr_val)
+                except ValueError:
+                    pass
 
-        setattr(obj, attr_name, attr_value)
+        setattr(obj, attr_name, attr_val)
         obj.save()
 
     def default(self, line):
-        """Handle alternate dot-notation syntax (e.g. BaseModel.all())."""
-        match = re.match(r"^(\w+)\.(\w+)\((.*)\)$", line)
-        if not match:
-            print(f"*** Unknown syntax: {line}")
-            return
+        """Handles advanced syntax: <class name>.<command>(<args>)."""
+        if "." not in line or "(" not in line or not line.endswith(")"):
+            return super().default(line)
 
-        cls_name, command, raw_args = match.groups()
+        try:
+            cls_name, rest = line.split(".", 1)
+            method, args_str = rest.split("(", 1)
+            args_str = args_str.rstrip(")")
 
-        if command == "all":
-            self.do_all(cls_name)
-        elif command == "count":
-            self.do_count(cls_name)
-        elif command == "show":
-            self.do_show(f"{cls_name} {raw_args.strip('\"\'')}")
-        elif command == "destroy":
-            self.do_destroy("{} {}".format(cls_name, raw_args.strip("\"'")))
-        elif command == "update":
-            dict_match = re.match(
-                r"^[\"']([^\"']+)[\"'],\s*(\{.*\})$", raw_args
-            )
-            if dict_match:
-                inst_id, dict_str = dict_match.groups()
-                try:
-                    attr_dict = eval(dict_str)
-                    if isinstance(attr_dict, dict):
-                        for k, v in attr_dict.items():
-                            self.do_update(
-                                f"{cls_name} {inst_id} {k} \"{v}\""
-                            )
-                        return
-                except Exception:
-                    pass
+            if cls_name not in CLASSES:
+                return super().default(line)
 
-            args = raw_args.split(",")
-            if len(args) >= 3:
-                inst_id = args[0].strip(" \"'")
-                attr_name = args[1].strip(" \"'")
-                attr_val = args[2].strip(" \"'")
-                self.do_update(
-                    f"{cls_name} {inst_id} {attr_name} \"{attr_val}\""
-                )
-            elif len(args) == 2:
-                inst_id = args[0].strip(" \"'")
-                attr_name = args[1].strip(" \"'")
-                self.do_update(f"{cls_name} {inst_id} {attr_name}")
-            elif len(args) == 1 and args[0]:
-                inst_id = args[0].strip(" \"'")
-                self.do_update(f"{cls_name} {inst_id}")
-            else:
-                self.do_update(cls_name)
-        else:
-            print(f"*** Unknown syntax: {line}")
+            if method == "all":
+                return self.do_all(cls_name)
+
+            if method == "count":
+                count = 0
+                for key in models.storage.all().keys():
+                    if key.startswith(cls_name + "."):
+                        count += 1
+                print(count)
+                return
+
+            clean_args = args_str.strip("\"'")
+
+            if method == "show":
+                return self.do_show("{} {}".format(cls_name, clean_args))
+
+            if method == "destroy":
+                return self.do_destroy("{} {}".format(cls_name, clean_args))
+
+            if method == "update":
+                if "{" in args_str and "}" in args_str:
+                    id_part, dict_part = args_str.split(",", 1)
+                    clean_id = id_part.strip("\"' ")
+                    try:
+                        eval_dict = eval(dict_part.strip())
+                        if isinstance(eval_dict, dict):
+                            for k, v in eval_dict.items():
+                                self.do_update("{} {} {} {}".format(
+                                    cls_name, clean_id, k, str(v)
+                                ))
+                            return
+                    except Exception:
+                        pass
+
+                parts = [p.strip("\"' ") for p in args_str.split(",")]
+                if len(parts) >= 3:
+                    return self.do_update("{} {} {} {}".format(
+                        cls_name, parts[0], parts[1], parts[2]
+                    ))
+                elif len(parts) == 2:
+                    return self.do_update("{} {} {}".format(
+                        cls_name, parts[0], parts[1]
+                    ))
+                elif len(parts) == 1:
+                    return self.do_update("{} {}".format(
+                        cls_name, parts[0]
+                    ))
+
+        except Exception:
+            pass
+
+        return super().default(line)
 
 
 if __name__ == "__main__":
