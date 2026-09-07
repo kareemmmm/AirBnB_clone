@@ -15,7 +15,10 @@ class BaseModel:
             for key, value in kwargs.items():
                 if key != "__class__":
                     if key in ("created_at", "updated_at"):
-                        setattr(self, key, datetime.strptime(value, time_format))
+                        parsed_time = datetime.strptime(
+                            value, time_format
+                        )
+                        setattr(self, key, parsed_time)
                     else:
                         setattr(self, key, value)
         else:
