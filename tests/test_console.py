@@ -33,13 +33,19 @@ class TestHBNBCommand(unittest.TestCase):
         """Test create without class name."""
         with patch("sys.stdout", new=StringIO()) as output:
             HBNBCommand().onecmd("create")
-            self.assertEqual("** class name missing **", output.getvalue().strip())
+            msg = "** class name missing **"
+            self.assertEqual(
+                msg, output.getvalue().strip()
+            )
 
     def test_create_invalid_class(self):
         """Test create with non-existent class."""
         with patch("sys.stdout", new=StringIO()) as output:
             HBNBCommand().onecmd("create MyModel")
-            self.assertEqual("** class doesn't exist **", output.getvalue().strip())
+            msg = "** class doesn't exist **"
+            self.assertEqual(
+                msg, output.getvalue().strip()
+            )
 
 
 if __name__ == "__main__":
